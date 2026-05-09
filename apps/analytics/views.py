@@ -5,15 +5,18 @@ from rest_framework.decorators import api_view
 from apps.products.models import Product
 from core.responses import ok
 
-TODAY = '2026-04-26'
-
 
 def _get_db():
-    client = MongoClient(
-        host=getattr(settings, 'MONGO_HOST', 'localhost'),
-        port=getattr(settings, 'MONGO_PORT', 27017),
-    )
-    return client[getattr(settings, 'MONGO_DB', 'arihant_db')]
+    uri = getattr(settings, 'MONGO_URI', None)
+    db_name = getattr(settings, 'MONGO_DB', 'arihant_db')
+    if uri:
+        client = MongoClient(uri)
+    else:
+        client = MongoClient(
+            host=getattr(settings, 'MONGO_HOST', 'localhost'),
+            port=getattr(settings, 'MONGO_PORT', 27017),
+        )
+    return client[db_name]
 
 
 @api_view(['GET'])
@@ -23,7 +26,7 @@ def dashboard(request):
     except (TypeError, ValueError):
         days = 30
 
-    cutoff = (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=days)).isoformat()
+    cutoff = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
     db = _get_db()
 
     # Revenue + profit aggregation
@@ -58,7 +61,7 @@ def dashboard(request):
     inventory_value = inv_agg[0]['total'] if inv_agg else 0
 
     # Revenue sparkline — last 7 days
-    spark_cutoff = (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=6)).isoformat()
+    spark_cutoff = (datetime.date.today() - datetime.timedelta(days=6)).isoformat()
     spark_raw = {
         r['_id']: r['rev']
         for r in db.sales.aggregate([
@@ -68,15 +71,15 @@ def dashboard(request):
         ])
     }
     revenue_spark = [
-        {'date': (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=6 - i)).isoformat(),
+        {'date': (datetime.date.today() - datetime.timedelta(days=6 - i)).isoformat(),
          'revenue': spark_raw.get(
-             (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=6 - i)).isoformat(), 0
+             (datetime.date.today() - datetime.timedelta(days=6 - i)).isoformat(), 0
          )}
         for i in range(7)
     ]
 
     # Daily trend — last 14 days (revenue + profit)
-    trend_cutoff = (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=13)).isoformat()
+    trend_cutoff = (datetime.date.today() - datetime.timedelta(days=13)).isoformat()
     trend_raw = {
         r['_id']: r
         for r in db.sales.aggregate([
@@ -91,7 +94,7 @@ def dashboard(request):
     }
     days_list = []
     for i in range(14):
-        d = (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=13 - i)).isoformat()
+        d = (datetime.date.today() - datetime.timedelta(days=13 - i)).isoformat()
         row = trend_raw.get(d, {})
         days_list.append({
             'date': d,
@@ -150,7 +153,7 @@ def profit_loss(request):
     except (TypeError, ValueError):
         days = 30
 
-    cutoff = (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=days)).isoformat()
+    cutoff = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
     db = _get_db()
 
     # Totals
@@ -191,7 +194,7 @@ def profit_loss(request):
     }
     days_list = []
     for i in range(days):
-        d = (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=days - 1 - i)).isoformat()
+        d = (datetime.date.today() - datetime.timedelta(days=days - 1 - i)).isoformat()
         row = daily_raw.get(d, {})
         days_list.append({
             'date': d,
