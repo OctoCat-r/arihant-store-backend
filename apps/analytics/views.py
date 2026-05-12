@@ -1,3 +1,4 @@
+import certifi
 import datetime
 from pymongo import MongoClient, DESCENDING
 from django.conf import settings
@@ -10,7 +11,7 @@ def _get_db():
     uri = getattr(settings, 'MONGO_URI', None)
     db_name = getattr(settings, 'MONGO_DB', 'arihant_db')
     if uri:
-        client = MongoClient(uri)
+        client = MongoClient(uri, tlsCAFile=certifi.where())
     else:
         client = MongoClient(
             host=getattr(settings, 'MONGO_HOST', 'localhost'),

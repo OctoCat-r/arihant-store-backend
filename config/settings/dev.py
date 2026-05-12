@@ -1,12 +1,12 @@
 from .base import *  # noqa: F403, F401
+import certifi
 import mongoengine
 
 MONGO_URI = os.getenv('MONGO_URI')  # noqa: F405
 MONGO_DB = os.getenv('MONGO_DB', 'arihant_db')  # noqa: F405
 
 if MONGO_URI:
-    # Atlas / production: single URI contains host, credentials, options
-    mongoengine.connect(db=MONGO_DB, host=MONGO_URI)
+    mongoengine.connect(db=MONGO_DB, host=MONGO_URI, tlsCAFile=certifi.where())
 else:
     # Local dev: individual settings
     MONGO_HOST = os.getenv('MONGO_HOST', 'localhost')  # noqa: F405
