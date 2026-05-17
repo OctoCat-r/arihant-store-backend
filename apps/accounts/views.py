@@ -1,4 +1,5 @@
 import jwt
+import logging
 import datetime
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
@@ -6,6 +7,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import User
 from .tokens import make_access_token, make_refresh_token, decode_refresh_token
 from core.responses import ok, err
+
+logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
@@ -21,6 +24,9 @@ def login(request):
         user = User.objects.get(email=email)
     except User.DoesNotExist:
         return err('Invalid credentials.', 401)
+    except Exception as e:
+        logger.error('DB error during login for %s: %s', email, e, exc_info=True)
+        return err('Internal server error.', 500)
 
     if not user.is_active:
         return err('Account disabled.', 403)
@@ -28,9 +34,16 @@ def login(request):
     if not check_password(password, user.password_hash):
         return err('Invalid credentials.', 401)
 
+    try:
+        access = make_access_token(str(user.id))
+        refresh = make_refresh_token(str(user.id))
+    except Exception as e:
+        logger.error('Token generation failed for %s: %s', email, e, exc_info=True)
+        return err('Internal server error.', 500)
+
     return ok({
-        'access': make_access_token(str(user.id)),
-        'refresh': make_refresh_token(str(user.id)),
+        'access': access,
+        'refresh': refresh,
         'user': {'id': str(user.id), 'email': user.email, 'name': user.name},
     })
 
