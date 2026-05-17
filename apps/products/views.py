@@ -19,7 +19,6 @@ def search_products(request):
         match['$or'] = [
             {'name': {'$regex': q, '$options': 'i'}},
             {'brand': {'$regex': q, '$options': 'i'}},
-            {'sku': {'$regex': q, '$options': 'i'}},
         ]
     pipeline = [
         {'$match': match},
@@ -149,7 +148,6 @@ def create_product(request):
         price=int(data.get('price', 0)),
         compatible_with=data.get('compatibleWith', []),
         color=data.get('color'),
-        sku=data.get('sku', f'ARI-{prod_id.upper()}'),
         sold_30d=int(data.get('sold30d', 0)),
         rating=float(data.get('rating', 4.0)),
         added_date=data.get('addedDate', ''),
@@ -191,7 +189,7 @@ def product_detail(request, prod_id):
         'name': 'name', 'category': 'category', 'brand': 'brand',
         'stock': ('stock', int), 'cost': ('cost', int), 'price': ('price', int),
         'compatibleWith': ('compatible_with', list), 'color': 'color',
-        'sku': 'sku', 'sold30d': ('sold_30d', int), 'rating': ('rating', float),
+        'sold30d': ('sold_30d', int), 'rating': ('rating', float),
         'addedDate': 'added_date', 'lowStockThreshold': ('low_stock_threshold', int),
         'image': 'image',
     }

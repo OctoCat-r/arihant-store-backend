@@ -32,7 +32,6 @@ class Product(me.Document):
     price = me.IntField(required=True, min_value=0)
     compatible_with = me.ListField(me.StringField(), default=list)
     color = me.StringField(null=True)
-    sku = me.StringField(max_length=80, default='')
     sold_30d = me.IntField(default=0)
     rating = me.FloatField(default=4.0)
     added_date = me.StringField(max_length=10, default='')  # ISO date string
@@ -49,7 +48,6 @@ class Product(me.Document):
             'price',
             'sold_30d',                          # sales sort
             'compatible_with',
-            {'fields': ['sku'], 'unique': True, 'sparse': True},
             {'fields': ['category', 'name']},    # category filter + name sort
             {'fields': ['category', 'price']},   # category filter + price sort
             {'fields': ['category', 'stock']},   # category filter + stock sort
@@ -67,7 +65,6 @@ class Product(me.Document):
             'price': self.price,
             'compatibleWith': self.compatible_with,
             'color': self.color,
-            'sku': self.sku,
             'sold30d': self.sold_30d,
             'rating': round(self.rating, 2),
             'addedDate': self.added_date,

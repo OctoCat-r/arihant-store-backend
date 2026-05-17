@@ -9,7 +9,6 @@ def build_match(request) -> dict:
         conditions.append({'$or': [
             {'name': {'$regex': q, '$options': 'i'}},
             {'brand': {'$regex': q, '$options': 'i'}},
-            {'sku': {'$regex': q, '$options': 'i'}},
             {'compatible_with': {'$regex': q, '$options': 'i'}},
         ]})
 
@@ -79,7 +78,6 @@ def raw_to_dict(p: dict) -> dict:
         'price': p.get('price', 0),
         'compatibleWith': p.get('compatible_with', []),
         'color': p.get('color'),
-        'sku': p.get('sku', ''),
         'sold30d': p.get('sold_30d', 0),
         'rating': round(float(p.get('rating', 4.0)), 2),
         'addedDate': p.get('added_date', ''),
