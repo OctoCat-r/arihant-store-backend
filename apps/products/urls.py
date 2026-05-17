@@ -13,6 +13,7 @@ urlpatterns = [
 
     # products
     path('', views.list_products),
+    path('search/', views.search_products),
     path('create/', views.create_product),
     path('<str:prod_id>/', views.product_detail),
 ]

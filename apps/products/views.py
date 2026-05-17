@@ -5,6 +5,35 @@ from .filters import build_match, build_sort, raw_to_dict
 from core.responses import ok, err, paginated
 
 
+# ── Product search (lightweight, for dropdowns) ──────────────────────────────
+
+@api_view(['GET'])
+def search_products(request):
+    q = request.GET.get('q', '').strip()
+    match: dict = {'stock': {'$gt': 0}}
+    if q:
+        match['$or'] = [
+            {'name': {'$regex': q, '$options': 'i'}},
+            {'brand': {'$regex': q, '$options': 'i'}},
+            {'sku': {'$regex': q, '$options': 'i'}},
+        ]
+    pipeline = [
+        {'$match': match},
+        {'$sort': {'name': 1}},
+        {'$limit': 12},
+        {'$project': {'name': 1, 'brand': 1, 'stock': 1, 'cost': 1, 'price': 1}},
+    ]
+    results = list(Product.objects.aggregate(pipeline))
+    return ok([{
+        'id': str(p['_id']),
+        'name': p.get('name', ''),
+        'brand': p.get('brand', ''),
+        'stock': p.get('stock', 0),
+        'cost': p.get('cost', 0),
+        'price': p.get('price', 0),
+    } for p in results])
+
+
 # ── Categories ──────────────────────────────────────────────────────────────
 
 @api_view(['GET'])
