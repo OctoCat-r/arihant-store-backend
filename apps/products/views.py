@@ -1,9 +1,8 @@
 import uuid
 from rest_framework.decorators import api_view
 from .models import Category, Brand, Product
-from .filters import apply_product_filters
+from .filters import build_match, build_sort, raw_to_dict
 from core.responses import ok, err, paginated
-from core.pagination import paginate_qs
 
 
 # ── Categories ──────────────────────────────────────────────────────────────
@@ -68,9 +67,30 @@ def create_brand(request):
 
 @api_view(['GET'])
 def list_products(request):
-    qs = apply_product_filters(request)
-    items, total, page, size = paginate_qs(qs, request)
-    return paginated([p.to_dict() for p in items], total, page, size)
+    try:
+        page = max(1, int(request.GET.get('page', 1)))
+        size = min(200, max(1, int(request.GET.get('page_size', 50))))
+    except (TypeError, ValueError):
+        page, size = 1, 50
+
+    match = build_match(request)
+    sort = build_sort(request)
+
+    pipeline = [
+        *([{'$match': match}] if match else []),
+        {'$sort': sort},
+        {'$facet': {
+            'data': [{'$skip': (page - 1) * size}, {'$limit': size}],
+            'total': [{'$count': 'n'}],
+        }},
+    ]
+
+    result = next(iter(Product.objects.aggregate(pipeline)), None)
+    if not result:
+        return paginated([], 0, page, size)
+
+    total = result['total'][0]['n'] if result.get('total') else 0
+    return paginated([raw_to_dict(p) for p in result.get('data', [])], total, page, size)
 
 
 @api_view(['POST'])

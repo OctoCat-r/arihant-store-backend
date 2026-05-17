@@ -48,6 +48,8 @@ class Product(me.Document):
             'price',
             'compatible_with',
             {'fields': ['sku'], 'unique': True, 'sparse': True},
+            {'fields': ['category', 'name']},   # category filter + name sort
+            {'fields': ['category', 'price']},  # category filter + price sort
         ],
     }
 
