@@ -12,7 +12,6 @@ class Sale(me.Document):
     cost = me.IntField(default=0)
     profit = me.IntField(default=0)
     customer = me.StringField(max_length=120, default='Walk-in')
-    payment_method = me.StringField(choices=['UPI', 'Cash', 'Card'], default='UPI')
 
     meta = {
         'collection': 'sales',
@@ -20,7 +19,6 @@ class Sale(me.Document):
             '-date',
             'category',
             'product_id',
-            'payment_method',
         ],
     }
 
@@ -36,5 +34,4 @@ class Sale(me.Document):
             'cost': self.cost,
             'profit': self.profit,
             'customer': self.customer,
-            'paymentMethod': self.payment_method,
         }

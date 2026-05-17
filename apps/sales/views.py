@@ -20,7 +20,6 @@ def create_sale(request):
     data = request.data
     product_id = (data.get('productId') or '').strip()
     customer = (data.get('customer') or 'Walk-in').strip() or 'Walk-in'
-    payment_method = data.get('paymentMethod', 'UPI')
 
     try:
         qty = int(data.get('qty', 1))
@@ -34,8 +33,6 @@ def create_sale(request):
         return err('qty must be at least 1.', 400)
     if selling_price < 0:
         return err('sellingPrice must be non-negative.', 400)
-    if payment_method not in ('UPI', 'Cash', 'Card'):
-        return err('paymentMethod must be UPI, Cash, or Card.', 400)
 
     try:
         product = Product.objects.get(id=product_id)
@@ -60,7 +57,6 @@ def create_sale(request):
         cost=cost,
         profit=profit,
         customer=customer,
-        payment_method=payment_method,
     )
     sale.save()
 
