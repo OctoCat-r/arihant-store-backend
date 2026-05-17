@@ -6,6 +6,7 @@ from .models import Sale
 from apps.products.models import Product
 from core.responses import ok, err, paginated
 from core.pagination import paginate_qs
+from core import cache
 
 
 @api_view(['GET'])
@@ -20,6 +21,7 @@ def create_sale(request):
     data = request.data
     product_id = (data.get('productId') or '').strip()
     customer = (data.get('customer') or 'Walk-in').strip() or 'Walk-in'
+    payment_method = (data.get('paymentMethod') or 'UPI').strip() or 'UPI'
 
     try:
         qty = int(data.get('qty', 1))
@@ -35,7 +37,9 @@ def create_sale(request):
         return err('sellingPrice must be non-negative.', 400)
 
     try:
-        product = Product.objects.get(id=product_id)
+        product = Product.objects.only(
+            'id', 'name', 'category', 'cost', 'stock', 'sold_30d'
+        ).get(id=product_id)
     except Product.DoesNotExist:
         return err('Product not found.', 404)
 
@@ -57,11 +61,18 @@ def create_sale(request):
         cost=cost,
         profit=profit,
         customer=customer,
+        payment_method=payment_method,
     )
     sale.save()
 
-    product.stock = product.stock - qty
-    product.sold_30d = product.sold_30d + qty
-    product.save()
+    # Atomic stock update — avoids race condition from read-modify-write
+    Product.objects(id=product_id).update_one(
+        dec__stock=qty,
+        inc__sold_30d=qty,
+    )
+
+    # Invalidate analytics cache — dashboard/P&L data is now stale
+    cache.delete_prefix('dashboard_')
+    cache.delete_prefix('pl_')
 
     return ok(sale.to_dict(), 201)

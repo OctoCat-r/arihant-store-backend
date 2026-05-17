@@ -7,7 +7,7 @@ class Category(me.Document):
     icon = me.StringField(max_length=10, default='')
     color = me.StringField(max_length=20, default='#7C3AED')
 
-    meta = {'collection': 'categories', 'ordering': ['name']}
+    meta = {'collection': 'categories', 'ordering': ['name'], 'indexes': ['name']}
 
     def to_dict(self):
         return {'id': self.id, 'name': self.name, 'icon': self.icon, 'color': self.color}
@@ -42,14 +42,17 @@ class Product(me.Document):
     meta = {
         'collection': 'products',
         'indexes': [
+            'name',                              # default sort, unfiltered listing
             'category',
             'brand',
             'stock',
             'price',
+            'sold_30d',                          # sales sort
             'compatible_with',
             {'fields': ['sku'], 'unique': True, 'sparse': True},
-            {'fields': ['category', 'name']},   # category filter + name sort
-            {'fields': ['category', 'price']},  # category filter + price sort
+            {'fields': ['category', 'name']},    # category filter + name sort
+            {'fields': ['category', 'price']},   # category filter + price sort
+            {'fields': ['category', 'stock']},   # category filter + stock sort
         ],
     }
 

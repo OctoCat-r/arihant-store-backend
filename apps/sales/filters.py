@@ -17,4 +17,8 @@ def apply_sales_filters(request):
     if category and category != 'all':
         qs = qs.filter(category=category)
 
+    payment_method = request.GET.get('payment_method', '').strip()
+    if payment_method and payment_method != 'all':
+        qs = qs.filter(payment_method=payment_method)
+
     return qs.order_by('-date')

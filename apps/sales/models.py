@@ -12,12 +12,12 @@ class Sale(me.Document):
     cost = me.IntField(default=0)
     profit = me.IntField(default=0)
     customer = me.StringField(max_length=120, default='Walk-in')
+    payment_method = me.StringField(max_length=20, default='UPI')
 
     meta = {
         'collection': 'sales',
         'indexes': [
-            '-date',
-            'category',
+            [('date', -1), ('category', 1)],  # covers date-range + category filter together
             'product_id',
         ],
     }
@@ -34,4 +34,5 @@ class Sale(me.Document):
             'cost': self.cost,
             'profit': self.profit,
             'customer': self.customer,
+            'paymentMethod': self.payment_method,
         }

@@ -6,7 +6,9 @@ import mongoengine
 MONGO_URI = os.environ['MONGO_URI']  # noqa: F405
 MONGO_DB = os.getenv('MONGO_DB', 'arihant_db')  # noqa: F405
 
-mongoengine.connect(db=MONGO_DB, host=MONGO_URI, tlsCAFile=certifi.where())
+_POOL = dict(maxPoolSize=10, minPoolSize=2, maxIdleTimeMS=30_000,
+             connectTimeoutMS=5_000, serverSelectionTimeoutMS=5_000, socketTimeoutMS=10_000)
+mongoengine.connect(db=MONGO_DB, host=MONGO_URI, tlsCAFile=certifi.where(), **_POOL)
 
 # Security hardening
 DEBUG = False

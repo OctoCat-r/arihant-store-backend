@@ -6,6 +6,7 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import User
 from .tokens import make_access_token, make_refresh_token, decode_refresh_token
+from .authentication import invalidate_user
 from core.responses import ok, err
 
 logger = logging.getLogger(__name__)
@@ -92,4 +93,5 @@ def update_me(request):
             return err('Password must be at least 6 characters.', 400)
         user.password_hash = make_password(pw)
     user.save()
+    invalidate_user(str(user.id))
     return ok({'id': str(user.id), 'email': user.email, 'name': user.name})

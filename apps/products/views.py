@@ -1,8 +1,12 @@
+import time
 import uuid
 from rest_framework.decorators import api_view
 from .models import Category, Brand, Product
 from .filters import build_match, build_sort, raw_to_dict
 from core.responses import ok, err, paginated
+
+_categories_cache: dict = {'data': None, 'ts': 0.0}
+_CATEGORIES_TTL = 60  # seconds
 
 
 # ── Product search (lightweight, for dropdowns) ──────────────────────────────
@@ -38,8 +42,12 @@ def search_products(request):
 
 @api_view(['GET'])
 def list_categories(request):
-    cats = Category.objects.order_by('name')
-    return ok([c.to_dict() for c in cats])
+    now = time.monotonic()
+    if _categories_cache['data'] is None or now - _categories_cache['ts'] > _CATEGORIES_TTL:
+        cats = Category.objects.only('id', 'name', 'icon', 'color').order_by('name')
+        _categories_cache['data'] = [c.to_dict() for c in cats]
+        _categories_cache['ts'] = now
+    return ok(_categories_cache['data'])
 
 
 @api_view(['POST'])
@@ -54,6 +62,7 @@ def create_category(request):
         color=data.get('color', '#7C3AED'),
     )
     cat.save()
+    _categories_cache['data'] = None
     return ok(cat.to_dict(), 201)
 
 
@@ -66,12 +75,14 @@ def category_detail(request, cat_id):
 
     if request.method == 'DELETE':
         cat.delete()
+        _categories_cache['data'] = None
         return ok({'deleted': cat_id})
 
     for field in ('name', 'icon', 'color'):
         if field in request.data:
             setattr(cat, field, request.data[field])
     cat.save()
+    _categories_cache['data'] = None
     return ok(cat.to_dict())
 
 
@@ -79,7 +90,7 @@ def category_detail(request, cat_id):
 
 @api_view(['GET'])
 def list_brands(request):
-    brands = [b.name for b in Brand.objects.order_by('name')]
+    brands = [b.name for b in Brand.objects.only('name').order_by('name')]
     return ok(brands)
 
 
